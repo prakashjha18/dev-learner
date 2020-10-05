@@ -35,18 +35,16 @@ const CourseSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: 'Bootcamp',
     required: true
+  },
+  user: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: true
   }
-  // ,
-  // user: {
-  //   type: mongoose.Schema.ObjectId,
-  //   ref: 'User',
-  //   required: true
-  // }
 });
 
 // Static method to get avg of course tuitions
 CourseSchema.statics.getAverageCost = async function(bootcampId) {
-  //console.log("calculating agg");
   const obj = await this.aggregate([
     {
       $match: { bootcamp: bootcampId }
@@ -60,22 +58,29 @@ CourseSchema.statics.getAverageCost = async function(bootcampId) {
   ]);
 
   try {
-    await this.model('Bootcamp').findByIdAndUpdate(bootcampId, {
-      averageCost: Math.ceil(obj[0].averageCost / 10) * 10
-    });
+ if (obj[0]) {
+      await this.model("Bootcamp").findByIdAndUpdate(bootcampId, {
+        averageCost:Math.ceil(obj[0].averageCost / 10) * 10,
+      });
+    } else {
+      await this.model("Bootcamp").findByIdAndUpdate(bootcampId, {
+        averageCost: undefined,
+      });
+    }
   } catch (err) {
     console.error(err);
   }
 };
 
 // Call getAverageCost after save
-CourseSchema.post('save', function() {
-  this.constructor.getAverageCost(this.bootcamp);
+CourseSchema.post('save', async function() {
+  await this.constructor.getAverageCost(this.bootcamp);
 });
 
-// Call getAverageCost before remove
-CourseSchema.pre('remove', function() {
-  this.constructor.getAverageCost(this.bootcamp);
+// Call getAverageCost after remove
+CourseSchema.post('remove', async function () {
+  await this.constructor.getAverageCost(this.bootcamp);
 });
+
 
 module.exports = mongoose.model('Course', CourseSchema);

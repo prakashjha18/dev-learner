@@ -2,7 +2,7 @@ const ErrorResponse = require('../utils/errorResponse');
 const User = require('../models/User');
 const asyncHandler = require('../middleware/async');
 const sendEmail = require('../utils/sendEmail');
-
+const crypto = require('crypto');
 
 exports.register = asyncHandler(async(req,res,next) => {
     const { name, email, password, role } = req.body;
@@ -62,7 +62,6 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
 
   // Get reset token
   const resetToken = user.getResetPasswordToken();
-  console.log(resetToken);
 
   await user.save({ validateBeforeSave: false });
 
@@ -95,6 +94,31 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     success: true,
     data: user
   });
+});
+
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+  // Get hashed token
+  const resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(req.params.resettoken)
+    .digest('hex');
+
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() }
+  });
+
+  if (!user) {
+    return next(new ErrorResponse('Invalid token', 400));
+  }
+
+  // Set new password
+  user.password = req.body.password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  sendTokenResponse(user, 200, res);
 });
 
 // Get token from model, create cookie and send response

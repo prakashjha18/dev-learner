@@ -88,7 +88,6 @@ const server = app.listen(
 //handle unhandled promise rejection
 process.on('unhandledRejection', (err, promise) => {
     console.log(`Error: ${err.message}`);
-    //console.log('dsds');
     // Close server & exit process
     //server.close(() => process.exit(1));
   });

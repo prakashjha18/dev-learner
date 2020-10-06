@@ -1,6 +1,6 @@
 # devLearner API
 
-> Backend API for devLearner, which is a bootcamp directory website
+> Backend API for devLearner, which is a bootcamp directory website, This is a back-end API based Node.js application.
 
 ## Usage
 
